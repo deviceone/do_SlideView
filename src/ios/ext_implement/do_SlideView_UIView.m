@@ -164,7 +164,7 @@
          }
 
          CATransition *animation = [doUIModuleHelper GetAnmation:animationType :animationTime/1000.0];
-         if (animationTime != 0) {
+         if (animationTime != 0&&animationType.length>0) {
              [self.layer addAnimation:animation forKey:animationType.lowercaseString];
               }
          [self addSubview:view];
