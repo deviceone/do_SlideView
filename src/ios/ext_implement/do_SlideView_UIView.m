@@ -154,6 +154,8 @@
          else if([pageValue isKindOfClass:[doUIModule class]])
          {
              view =(UIView*)(((doUIModule*)pageValue).CurrentUIModuleView);
+             if(view==[self subviews][0])//已经显示了当前页就不需要再刷新
+                 return;
          }
          
          for(int i =0;i<[self subviews].count;i++)
