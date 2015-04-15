@@ -38,14 +38,16 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 	 * 每个UIview都会引用一个具体的model实例；
 	 */
 	private do_SlideView_MAbstract model;
-	private Map<String,Integer> viewIds;
+	private Map<String,Integer> viewIndexMap;
+	private Map<String,String> viewLoadPathMap; 
 	private String currViewId;
 	private Context mContext;
 	
 	public do_SlideView_View(Context context) {
 		super(context);
 		this.mContext = context;
-		viewIds = new LinkedHashMap<String, Integer>();
+		viewIndexMap = new LinkedHashMap<String, Integer>();
+		viewLoadPathMap = new LinkedHashMap<String,String>();
 	}
 
 	/**
@@ -124,7 +126,8 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 	*/
 	@Override
 	public void onDispose() {
-		//...do something
+		viewIndexMap.clear();
+		viewLoadPathMap.clear();
 	}
 	
 	/**
@@ -157,18 +160,7 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 		for (DoJsonValue childData : dataArray) {
 			String id = childData.getNode().getOneText("id", "");
 			String viewPath = childData.getNode().getOneText("path", "");
-			DoSourceFile _uiFile = _scriptEngine.getCurrentApp().getSourceFS().getSourceByFileName(viewPath);
-			if (_uiFile == null)
-				throw new Exception("试图打开一个无效的页面文件:" + viewPath);
-			String content  = _uiFile.getTxtContent();
-			DoUIContainer _doUIContainer = new DoUIContainer(model.getCurrentPage());
-			_doUIContainer.loadFromContent(content, null, null);
-			_doUIContainer.loadDefalutScriptFile(viewPath);
-			viewIds.put(id, getChildCount());
-			this.addView((View)_doUIContainer.getRootView().getCurrentUIModuleView());
-		}
-		if(viewIds.size() > 0){
-			this.currViewId = viewIds.keySet().iterator().next();
+			viewLoadPathMap.put(id, viewPath);
 		}
 	}
 
@@ -182,14 +174,14 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 	public void removeView(DoJsonNode _dictParas, DoIScriptEngine _scriptEngine,
 			DoInvokeResult _invokeResult) throws Exception {
 		String id = _dictParas.getOneText("id", "");
-		if(viewIds.containsKey(id)){
-			this.removeViewAt(viewIds.get(id));
-			viewIds.remove(id);
-			int size = viewIds.size();
+		if(viewIndexMap.containsKey(id)){
+			this.removeViewAt(viewIndexMap.get(id));
+			viewIndexMap.remove(id);
+			int size = viewIndexMap.size();
 			if(size == 0){
 				return;
 			}
-			Iterator<Entry<String,Integer>> iterator = viewIds.entrySet().iterator();
+			Iterator<Entry<String,Integer>> iterator = viewIndexMap.entrySet().iterator();
 			int index = 0;
 			while(iterator.hasNext()){
 				Entry<String, Integer> entry = iterator.next();
@@ -215,10 +207,19 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 			return;
 		}
 		currViewId = id;
+		String path = viewLoadPathMap.get(currViewId);
+		DoSourceFile _uiFile = _scriptEngine.getCurrentApp().getSourceFS().getSourceByFileName(path);
+		if (_uiFile == null){
+			throw new Exception("试图加载一个无效的页面文件:" + path);
+		}
+		if(!viewIndexMap.containsKey(currViewId)){
+			loadUIView(path, _uiFile);
+			viewIndexMap.put(currViewId, getChildCount() - 1 );
+		}
 		String animationType = _dictParas.getOneText("animationType", "");
 		int animationTime = _dictParas.getOneInteger("animationTime", 300);
 		int anim[] = DoAnimHelper.getAnimGroupResIds(animationType);
-		int newIndex = viewIds.get(id);
+		int index = viewIndexMap.get(currViewId);
 		if (anim != null) {
 			Animation outAnimation = AnimationUtils.loadAnimation(mContext, anim[1]);
 			outAnimation.setDuration(animationTime);
@@ -227,11 +228,19 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 			setOutAnimation(outAnimation);
 			setInAnimation(inAnimation);
 		}
-		this.setDisplayedChild(newIndex);
+		this.setDisplayedChild(index);
 		if(getInAnimation() != null){
 			getInAnimation().setAnimationListener(this);
 		}
 		
+	}
+	
+	private void loadUIView(String path, DoSourceFile dsFile) throws Exception {
+		String content  = dsFile.getTxtContent();
+		DoUIContainer _doUIContainer = new DoUIContainer(model.getCurrentPage());
+		_doUIContainer.loadFromContent(content, null, null);
+		_doUIContainer.loadDefalutScriptFile(path);
+		this.addView((View)_doUIContainer.getRootView().getCurrentUIModuleView());
 	}
 
 	@Override
@@ -252,4 +261,6 @@ public class do_SlideView_View extends ViewFlipper implements DoIUIModuleView,do
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
 }
