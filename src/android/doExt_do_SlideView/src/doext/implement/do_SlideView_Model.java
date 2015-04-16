@@ -1,6 +1,6 @@
-package extimplement;
+package doext.implement;
 
-import extdefine.do_SlideView_MAbstract;
+import doext.define.do_SlideView_MAbstract;
 
 /**
  * 自定义扩展组件Model实现，继承do_SlideView_MAbstract抽象类；
