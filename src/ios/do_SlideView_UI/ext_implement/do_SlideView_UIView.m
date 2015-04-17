@@ -1,3 +1,4 @@
+
 //
 //  do_SlideView_View.m
 //  DoExt_UI
@@ -18,6 +19,7 @@
 #import "doUIContainer.h"
 #import "doISourceFS.h"
 
+
 @implementation do_SlideView_UIView
 {
     @private
@@ -35,8 +37,12 @@
 {
     for(int i = 0;i<_pages.count;i++)
     {
-        doUIModule* module = [_pages allValues][i];
-        [module Dispose];
+        id module = [_pages allValues][i];
+        if([module isKindOfClass:[doUIModule class]])
+        {
+            [module Dispose];
+        }
+        
     }
     for(int i =0;i<[self subviews].count;i++)
     {
@@ -46,7 +52,7 @@
     _model = nil;
     //自定义的全局属性
 }
-//实现布局
+//实现布局`
 - (void) OnRedraw
 {
     //实现布局相关的修改
@@ -99,6 +105,7 @@
  {
      doJsonNode *_dictParas = [parms objectAtIndex:0];
      //构建_invokeResult的内容
+
      NSArray * pages = [_dictParas GetOneNodeArray:@"data"];
      for(int i = 0;i <pages.count;i++){
          doJsonNode* page = pages[i];
@@ -106,6 +113,7 @@
          NSString* pagePath = [page GetOneText:@"path" :@""];
          [_pages setObject:pagePath forKey:pageID];
      }
+     
      //自己的代码实现
  }
  - (void)removeView:(NSArray *)parms
@@ -172,6 +180,7 @@
          [self addSubview:view];
          [self bringSubviewToFront:view];
          doInvokeResult* _invokeResult = [[doInvokeResult alloc]init:_model.UniqueKey];
+         
          [_model.EventCenter FireEvent:@"viewChanged" :_invokeResult];
      }
  }

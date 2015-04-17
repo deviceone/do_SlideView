@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>8CE50FAB-6025-4B0F-838F-71A2A6B46D6C</string>
+	<key>IDESourceControlProjectName</key>
+	<string>DoExt_UI</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</key>
+		<string>https://github.com/deviceone/do_SlideView.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>src/ios/do_SlideView_UI/DoExt_UI.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</key>
+		<string>../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/deviceone/do_SlideView.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</string>
+			<key>IDESourceControlWCCName</key>
+			<string>do_SlideView</string>
+		</dict>
+	</array>
+</dict>
+</plist>
