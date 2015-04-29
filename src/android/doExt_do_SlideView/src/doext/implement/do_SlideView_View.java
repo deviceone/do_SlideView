@@ -12,6 +12,7 @@ import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewGroup;
 import core.DoServiceContainer;
+import core.helper.DoScriptEngineHelper;
 import core.helper.DoTextHelper;
 import core.helper.DoUIModuleHelper;
 import core.helper.jsonparse.DoJsonNode;
@@ -20,6 +21,7 @@ import core.interfaces.DoIListData;
 import core.interfaces.DoIScriptEngine;
 import core.interfaces.DoIUIModuleView;
 import core.object.DoInvokeResult;
+import core.object.DoMultitonModule;
 import core.object.DoSourceFile;
 import core.object.DoUIContainer;
 import core.object.DoUIModule;
@@ -107,8 +109,28 @@ public class do_SlideView_View extends ViewPager implements DoIUIModuleView, do_
 	@Override
 	public boolean invokeSyncMethod(String _methodName, DoJsonNode _dictParas,
 			DoIScriptEngine _scriptEngine, DoInvokeResult _invokeResult)throws Exception {
-		//...do something
+		if ("bindItems".equals(_methodName)) {
+			bindItems(_dictParas, _scriptEngine, _invokeResult);
+			return true;
+		}
+		if ("refreshItems".equals(_methodName)) {
+			this.getAdapter().notifyDataSetChanged();
+			return true;
+		}
 		return false;
+	}
+	
+	private void bindItems(DoJsonNode _dictParas, DoIScriptEngine _scriptEngine, DoInvokeResult _invokeResult) throws Exception {
+		String _address = _dictParas.getOneText("data", "");
+		if (_address == null || _address.length() <= 0)
+			throw new Exception("doSlideView 未指定 data参数！");
+		DoMultitonModule _multitonModule = DoScriptEngineHelper.parseMultitonModule(_scriptEngine, _address);
+		if (_multitonModule == null)
+			throw new Exception("doSlideView data参数无效！");
+		if (_multitonModule instanceof DoIListData) {
+			DoIListData _data = (DoIListData) _multitonModule;
+			setItems(_data);
+		}
 	}
 	
 	/**
@@ -201,7 +223,7 @@ public class do_SlideView_View extends ViewPager implements DoIUIModuleView, do_
 				}else{
 					childData = (DoJsonValue) ((List<?>)data).get(position);
 				}
-				int _index = DoTextHelper.strToInt(childData.getNode().getOneText("template", "0"), 0);
+				int _index = DoTextHelper.strToInt(childData.getNode().getOneText("template", "0"), -1);
 				String uiTemplate = uiTemplates.get(_index);
 				if (uiTemplate == null) {
 					throw new RuntimeException("绑定一个无效的模版Index值");
@@ -275,7 +297,7 @@ public class do_SlideView_View extends ViewPager implements DoIUIModuleView, do_
 		}
 	}
 	
-	public void setModelData(Object _obj) {
+	public void setItems(Object _obj) {
 		if (_obj == null)
 			return;
 		if (_obj instanceof DoIListData) {
