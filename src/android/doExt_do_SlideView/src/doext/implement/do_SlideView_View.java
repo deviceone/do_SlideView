@@ -239,7 +239,7 @@ public class do_SlideView_View extends ViewPager implements DoIUIModuleView, do_
 				} else {
 					_doIUIModuleView = (DoIUIModuleView) viewMap.get(position);
 				}
-				_doIUIModuleView.getModel().setModelData(null, childData);
+				_doIUIModuleView.getModel().setModelData(childData);
 				container.addView((View) _doIUIModuleView);
 			} catch (Exception e) {
 				DoServiceContainer.getLogEngine().writeError("解析data数据错误： \t",
