@@ -19,38 +19,308 @@
 #import "doUIContainer.h"
 #import "doISourceFS.h"
 
+#define SET_FRAME(CONTENT) x = CONTENT.frame.origin.x + increase;if(x < 0) x = pageWidth * 2;if(x > pageWidth * 2) x = 0.0f;[CONTENT setFrame:CGRectMake(x,CONTENT.frame.origin.y,CONTENT.frame.size.width,CONTENT.frame.size.height)]
+
+#define MAX_VALUE [_dataArray GetCount]-1
+#define MIN_VALUE 0
+
+
+@interface do_SlideView_UIView ()<UIScrollViewDelegate>
+
+@end
+
 
 @implementation do_SlideView_UIView
 {
     @private
-    NSMutableDictionary* _pages;
+    id<doIListData> _dataArray;
+    BOOL _isLooping;
+    NSMutableArray *_pages;
+    int _currentPage;
+    
+    UIView *_leftView,*_middleView,*_rightView;
 }
 #pragma mark - doIUIModuleView协议方法（必须）
 //引用Model对象
 - (void) LoadView: (doUIModule *) _doUIModule
 {
     _model = (typeof(_model)) _doUIModule;
-    _pages = [[NSMutableDictionary alloc]init];
+    _isLooping = NO;
+    _pages = [NSMutableArray array];
+    _currentPage = 0;
+    _leftView = [[UIView alloc] init];
+    _middleView = [[UIView alloc] init];
+    _rightView = [[UIView alloc] init];;
 }
+
+- (void)change_templates:(NSString *)newValue
+{
+    if (!newValue || [newValue isEqualToString:@""]) {
+        return;
+    }
+    _pages = [NSMutableArray array];
+    [_pages addObjectsFromArray:[newValue componentsSeparatedByString:@","]];
+}
+
+- (void)change_index:(NSString *)newValue
+{
+    if (!newValue || [newValue isEqualToString:@""]) {
+        _currentPage = MIN_VALUE;
+    }else{
+        _currentPage = [newValue intValue];
+        if (_currentPage > MAX_VALUE) {
+            _currentPage = MAX_VALUE;
+        }
+    }
+    
+}
+
+- (void)change_looping:(NSString *)newValue
+{
+    if (!newValue || [newValue isEqualToString:@""]) {
+        _isLooping = NO;
+    }else{
+        _isLooping = [newValue boolValue];
+    }
+}
+
+
+- (void)initialization{
+    float y,width,height;
+    y = 0;
+    
+    width = self.frame.size.width;
+    height = self.frame.size.height;
+    
+    for (int j=0; j<3; j++) {
+        CGRect r = CGRectMake(width*(j), y, width, height);
+        
+        if (j == 0) _leftView.frame = r;
+        if (j == 1) _middleView.frame = r;
+        if (j == 2) _rightView.frame = r;
+    }
+    
+    [self addSubview:_leftView];
+    [self addSubview:_middleView];
+    [self addSubview:_rightView];
+
+    [self setDelegate:self];
+    [self setPagingEnabled:YES];
+    [self setContentSize:CGSizeMake(width*3, height)];
+    [self setShowsHorizontalScrollIndicator:NO];
+}
+
+
+
+#pragma mark -
+
+#pragma mark UIScrollViewDelegate
+
+//更新三个指针的指向，content1 -----> middle，content0 -----> left，content2 -----> right
+- (void)allContentMoveRight:(CGFloat)pageWidth {
+    UIView *tmpView = _rightView;
+
+    _rightView = _middleView;
+    _middleView = _leftView;
+    _leftView = tmpView;
+    
+    float increase = pageWidth;
+    CGFloat x = 0.0f;
+    
+    SET_FRAME(_rightView);
+    SET_FRAME(_leftView);
+    SET_FRAME(_middleView);
+}
+
+- (void)allContentMoveLeft:(CGFloat)pageWidth {
+    UIView *tmpView = _leftView;
+
+    _leftView = _middleView;
+    _middleView = _rightView;
+    _rightView = tmpView;
+    
+    float increase = -pageWidth;
+    
+    CGFloat x = 0.0f;
+
+    SET_FRAME(_middleView);
+    SET_FRAME(_rightView);
+    SET_FRAME(_leftView);
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)theself
+{
+    CGFloat pageWidth = self.frame.size.width;
+    
+    // 0 1 2  滑动距离必须大于半个页面
+    int page = floor((theself.contentOffset.x - pageWidth/2) / pageWidth) + 1;
+    
+    if(page == 1) {
+        if (_currentPage == 0) {
+            _currentPage = 1;
+        }
+        return;
+    }
+    
+    if (![self ifScroll:page]) {
+        return;
+    }
+    
+    [self genetatePage:page];
+    NSLog(@"_currentPage = %i",_currentPage);
+
+    if (page == 0) {
+        [self allContentMoveRight:pageWidth];
+    } else {
+        [self allContentMoveLeft:pageWidth];
+    }
+
+    //建立新视图
+    [self newCreatePage:page];
+
+    CGPoint p = CGPointZero;
+    p.x = pageWidth;
+    [theself setContentOffset:p animated:NO];
+}
+
+- (void)genetatePage:(BOOL)ifLeft
+{
+    _currentPage += ifLeft?1:-1;
+    if (_currentPage < MIN_VALUE) {
+        _currentPage = MAX_VALUE;
+    }else if(_currentPage > MAX_VALUE){
+        _currentPage = MIN_VALUE;
+    }
+}
+
+- (BOOL)ifScroll:(BOOL)ifLeft
+{
+    if ([_dataArray GetCount] < 3) {
+        return false;
+    }
+    if (_isLooping) {
+        return true;
+    }else{
+        return [self pageNoLoopingValidate:ifLeft];
+    }
+    return false;
+}
+
+- (BOOL)pageNoLoopingValidate:(BOOL)ifLeft
+{
+    NSInteger pageIncrease = ifLeft?1:-1;
+    NSInteger p = _currentPage+pageIncrease;
+
+    if (p <= MIN_VALUE || p >= MAX_VALUE) {
+        return false;
+    }
+    return true;
+}
+
+
+- (void) bindItems: (NSArray*) parms
+{
+    doJsonNode * _dictParas = [parms objectAtIndex:0];
+    id<doIScriptEngine> _scriptEngine= [parms objectAtIndex:1];
+    NSString* _address = [_dictParas GetOneText:@"data": nil];
+    if (_address == nil || _address.length <= 0)
+        [NSException raise:@"doSlideView" format:@"未指定相关的SlideView data参数！",nil];
+    id bindingModule = [doScriptEngineHelper ParseMultitonModule: _scriptEngine : _address];
+    if (bindingModule == nil) [NSException raise:@"doListView" format:@"data参数无效！",nil];
+    if([bindingModule conformsToProtocol:@protocol(doIListData)])
+    {
+        if(_dataArray!= bindingModule)
+            _dataArray = bindingModule;
+    }
+}
+
+
+- (void)refreshItems: (NSArray*) parms
+{
+    [self resetView:[NSArray arrayWithObjects:@(0),@(1),@(2), nil]];
+}
+
+- (void)resetView:(NSArray *)a
+{
+    for (int i = 0;i<a.count;i++) {
+        int tmp = [[a objectAtIndex:i] intValue];
+        UIView *view = [self getPage:tmp];
+        if (view) {
+            if (tmp == 0) {
+                [_leftView addSubview:view];
+            }else if (tmp == 1){
+                [_middleView addSubview:view];
+            }else if(tmp == 2){
+                [_rightView addSubview:view];
+            }
+        }
+    }
+}
+
+- (void)newCreatePage:(BOOL)ifRight
+{
+    UIView *v ;
+    int num = ifRight?1:-1;
+    num += _currentPage;
+
+    if(ifRight){
+        if (_currentPage == MAX_VALUE) {
+            num = 0;
+        }
+        v = [self getPage:num];
+        [_rightView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+        [_rightView addSubview:v];
+    }else{
+        if (_currentPage == MIN_VALUE) {
+            num = MAX_VALUE;
+        }
+        v = [self getPage:num];
+        [_leftView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+        [_leftView addSubview:v];
+    }
+}
+
+- (UIView *)getPage:(int)num
+{
+    int num0 = num;
+    if (!_isLooping) {
+        if (num < MIN_VALUE || num > MAX_VALUE) {
+            return nil;
+        }
+    }
+
+    doJsonValue *jsonValue = [_dataArray GetData:num0];
+    doJsonNode *dataNode = [jsonValue GetNode];
+    
+    int num1 = [[dataNode.dictValues objectForKey:[[dataNode.dictValues allKeys] firstObject]] GetInteger:0];
+    
+    if (num1 < MIN_VALUE || num1 > MAX_VALUE) {
+        return nil;
+    }
+
+    NSString* fileName = [_pages objectAtIndex:num1];
+    doSourceFile *source = [[[_model.CurrentPage CurrentApp] SourceFS] GetSourceByFileName:fileName];
+    id<doIPage> pageModel = _model.CurrentPage;
+    doUIContainer *container = [[doUIContainer alloc] init:pageModel];
+    [container LoadFromFile:source:nil:nil];
+    doUIModule* module = container.RootView;
+    [container LoadDefalutScriptFile:fileName];
+    UIView *view = (UIView*)(((doUIModule*)module).CurrentUIModuleView);
+    id<doIUIModuleView> modelView =((doUIModule*) module).CurrentUIModuleView;
+    [modelView OnRedraw];
+    [module SetModelData:jsonValue];
+
+    return view;
+}
+
 //销毁所有的全局对象
 - (void) OnDispose
 {
-    for(int i = 0;i<_pages.count;i++)
-    {
-        id module = [_pages allValues][i];
-        if([module isKindOfClass:[doUIModule class]])
-        {
-            [module Dispose];
-        }
-        
-    }
-    for(int i =0;i<[self subviews].count;i++)
-    {
-        [self.subviews[i] removeFromSuperview];
-    }
-    [_pages removeAllObjects];
     _model = nil;
     //自定义的全局属性
+    [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    _pages = nil;
+    [(doModule*)_dataArray Dispose];
 }
 //实现布局`
 - (void) OnRedraw
@@ -59,6 +329,9 @@
     
     //重新调整视图的x,y,w,h
     [doUIModuleHelper OnRedraw:_model];
+    
+    [self initialization];
+
 }
 
 #pragma mark - TYPEID_IView协议方法（必须）
@@ -100,90 +373,6 @@
         [_invokeResult SetResultText: @"异步方法完成"];
         [_scritEngine Callback:_callbackName :_invokeResult];
  */
-//同步
- - (void)addViews:(NSArray *)parms
- {
-     doJsonNode *_dictParas = [parms objectAtIndex:0];
-     //构建_invokeResult的内容
-
-     NSArray * pages = [_dictParas GetOneNodeArray:@"data"];
-     for(int i = 0;i <pages.count;i++){
-         doJsonNode* page = pages[i];
-         NSString* pageID = [page GetOneText:@"id" :@""];
-         NSString* pagePath = [page GetOneText:@"path" :@""];
-         [_pages setObject:pagePath forKey:pageID];
-     }
-     
-     //自己的代码实现
- }
- - (void)removeView:(NSArray *)parms
- {
-     doJsonNode *_dictParas = [parms objectAtIndex:0];
-     //构建_invokeResult的内容
-     NSString* pageID = [_dictParas GetOneText : @"id" : @""];
-     id pageValue = _pages[pageID];
-     if (pageValue!=nil) {
-         if([pageValue isKindOfClass:[NSString class]])
-             [_pages removeObjectForKey:pageID];
-         else if([pageValue isKindOfClass:[doUIModule class]])
-         {
-             UIView* view =(UIView*)(((doUIModule*)pageValue).CurrentUIModuleView);
-             [view removeFromSuperview];
-             [_pages removeObjectForKey:pageID];
-             [((doUIModule*)pageValue) Dispose];
-         }
-     }
-     //自己的代码实现
- }
- - (void)showView:(NSArray *)parms
- {
-     doJsonNode *_dictParas = [parms objectAtIndex:0];
-     //构建_invokeResult的内容
-     NSString* pageID = [_dictParas GetOneText : @"id" : @""];
-     NSString* animationType = [_dictParas GetOneText : @"animationType" : @""];
-     int animationTime = [_dictParas GetOneInteger: @"animationTime" : 300];
-     id pageValue = _pages[pageID];
-     if (pageValue!=nil) {
-         UIView* view = nil;
-         if([pageValue isKindOfClass:[NSString class]])
-         {
-             NSString* fileName = (NSString*) pageValue;
-             doSourceFile *source = [[[_model.CurrentPage CurrentApp] SourceFS] GetSourceByFileName:fileName];
-             id<doIPage> pageModel = _model.CurrentPage;
-             doUIContainer *container = [[doUIContainer alloc] init:pageModel];
-             [container LoadFromFile:source:nil:nil];
-             doUIModule* module = container.RootView;
-             [container LoadDefalutScriptFile:fileName];
-             view = (UIView*)(((doUIModule*)module).CurrentUIModuleView);
-             id<doIUIModuleView> modelView =((doUIModule*) module).CurrentUIModuleView;
-             [modelView OnRedraw];
-             _pages[pageID] = module;
-         }
-         else if([pageValue isKindOfClass:[doUIModule class]])
-         {
-             view =(UIView*)(((doUIModule*)pageValue).CurrentUIModuleView);
-             if(view==[self subviews][0])//已经显示了当前页就不需要再刷新
-                 return;
-         }
-         
-         for(int i =0;i<[self subviews].count;i++)
-         {
-             UIView* subview = self.subviews[i];
-             [subview.layer removeAllAnimations];
-             [subview removeFromSuperview];
-         }
-
-         CATransition *animation = [doUIModuleHelper GetAnmation:animationType :animationTime/1000.0];
-         if (animationTime != 0&&animationType.length>0) {
-             [self.layer addAnimation:animation forKey:animationType.lowercaseString];
-              }
-         [self addSubview:view];
-         [self bringSubviewToFront:view];
-         doInvokeResult* _invokeResult = [[doInvokeResult alloc]init:_model.UniqueKey];
-         
-         [_model.EventCenter FireEvent:@"viewChanged" :_invokeResult];
-     }
- }
 
 #pragma mark - doIUIModuleView协议方法（必须）<大部分情况不需修改>
 - (BOOL) OnPropertiesChanging: (NSMutableDictionary *) _changedValues

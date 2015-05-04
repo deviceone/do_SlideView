@@ -12,11 +12,8 @@
 
 @required
 //属性方法
-
-//同步或异步方法
-- (void)addViews:(NSArray *)parms;
-- (void)removeView:(NSArray *)parms;
-- (void)showView:(NSArray *)parms;
-
+- (void)change_templates:(NSString *)newValue;
+- (void)change_index:(NSString *)newValue;
+- (void)change_looping:(NSString *)newValue;
 
 @end

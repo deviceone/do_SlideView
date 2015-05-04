@@ -15,8 +15,11 @@
 -(void)OnInit
 {
     [super OnInit];    
+    //注册属性
     //属性声明
-
+    [self RegistProperty:[[doProperty alloc]init:@"templates" :String :@"" :YES]];
+    [self RegistProperty:[[doProperty alloc]init:@"index" :String :@"" :YES]];
+    [self RegistProperty:[[doProperty alloc]init:@"looping" :String :@"" :YES]];
 }
 
 @end

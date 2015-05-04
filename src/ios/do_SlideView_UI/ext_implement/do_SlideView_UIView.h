@@ -10,8 +10,8 @@
 #import "do_SlideView_IView.h"
 #import "do_SlideView_UIModel.h"
 #import "doIUIModuleView.h"
-
-@interface do_SlideView_UIView : UIView<do_SlideView_IView, doIUIModuleView>
+#import "doIListData.h"
+@interface do_SlideView_UIView : UIScrollView<do_SlideView_IView, doIUIModuleView>
 //可根据具体实现替换UIView
 {
 	@private
