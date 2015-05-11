@@ -12,6 +12,8 @@
 	<dict>
 		<key>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</key>
 		<string>https://github.com/deviceone/do_SlideView.git</string>
+		<key>E5F1E90D1E7A3F6F3322070864C37B2432285A04</key>
+		<string>https://github.com/bjioswl/do_Http.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>src/ios/do_SlideView_UI/DoExt_UI.xcodeproj</string>
@@ -19,6 +21,8 @@
 	<dict>
 		<key>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</key>
 		<string>../../../../..</string>
+		<key>E5F1E90D1E7A3F6F3322070864C37B2432285A04</key>
+		<string>../../../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/deviceone/do_SlideView.git</string>
@@ -28,6 +32,14 @@
 	<string>B17C91E6CC611F36268A45CFAF6612F3D4CFD5B9</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>E5F1E90D1E7A3F6F3322070864C37B2432285A04</string>
+			<key>IDESourceControlWCCName</key>
+			<string></string>
+		</dict>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>

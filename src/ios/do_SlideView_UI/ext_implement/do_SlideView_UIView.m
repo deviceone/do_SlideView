@@ -13,11 +13,10 @@
 #import "doUIModuleHelper.h"
 #import "doScriptEngineHelper.h"
 #import "doIScriptEngine.h"
-#import "doJsonNode.h"
-#import "doJsonValue.h"
 #import "doIPage.h"
 #import "doUIContainer.h"
 #import "doISourceFS.h"
+#import "doJsonHelper.h"
 
 #define SET_FRAME(CONTENT) x = CONTENT.frame.origin.x + increase;if(x < 0) x = pageWidth * 2;if(x > pageWidth * 2) x = 0.0f;[CONTENT setFrame:CGRectMake(x,CONTENT.frame.origin.y,CONTENT.frame.size.width,CONTENT.frame.size.height)]
 
@@ -58,6 +57,7 @@
     if (!newValue || [newValue isEqualToString:@""]) {
         return;
     }
+//    _dataArray = [NSMutableArray array];
     _pages = [NSMutableArray array];
     [_pages addObjectsFromArray:[newValue componentsSeparatedByString:@","]];
 }
@@ -72,7 +72,6 @@
             _currentPage = MAX_VALUE;
         }
     }
-    
 }
 
 - (void)change_looping:(NSString *)newValue
@@ -220,9 +219,9 @@
 
 - (void) bindItems: (NSArray*) parms
 {
-    doJsonNode * _dictParas = [parms objectAtIndex:0];
+    NSDictionary * _dictParas = [parms objectAtIndex:0];
     id<doIScriptEngine> _scriptEngine= [parms objectAtIndex:1];
-    NSString* _address = [_dictParas GetOneText:@"data": nil];
+    NSString* _address = [doJsonHelper GetOneValue:_dictParas :@"data"];
     if (_address == nil || _address.length <= 0)
         [NSException raise:@"doSlideView" format:@"未指定相关的SlideView data参数！",nil];
     id bindingModule = [doScriptEngineHelper ParseMultitonModule: _scriptEngine : _address];
@@ -288,12 +287,8 @@
             return nil;
         }
     }
-
-    doJsonValue *jsonValue = [_dataArray GetData:num0];
-    doJsonNode *dataNode = [jsonValue GetNode];
-    
-    int num1 = [[dataNode.dictValues objectForKey:[[dataNode.dictValues allKeys] firstObject]] GetInteger:0];
-    
+    NSDictionary *dict = [_dataArray GetData:num0];
+    int num1 = [[dict objectForKey:@"template"] intValue];
     if (num1 < MIN_VALUE || num1 > MAX_VALUE) {
         return nil;
     }
@@ -308,7 +303,7 @@
     UIView *view = (UIView*)(((doUIModule*)module).CurrentUIModuleView);
     id<doIUIModuleView> modelView =((doUIModule*) module).CurrentUIModuleView;
     [modelView OnRedraw];
-    [module SetModelData:jsonValue];
+    [module SetModelData:dict];
 
     return view;
 }
@@ -320,7 +315,7 @@
     //自定义的全局属性
     [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     _pages = nil;
-    [(doModule*)_dataArray Dispose];
+    _dataArray = nil;
 }
 //实现布局`
 - (void) OnRedraw
@@ -385,12 +380,12 @@
     //_model的属性进行修改，同时调用self的对应的属性方法，修改视图
     [doUIModuleHelper HandleViewProperChanged: self :_model : _changedValues ];
 }
-- (BOOL) InvokeSyncMethod: (NSString *) _methodName : (doJsonNode *)_dicParas :(id<doIScriptEngine>)_scriptEngine : (doInvokeResult *) _invokeResult
+- (BOOL) InvokeSyncMethod: (NSString *) _methodName : (NSDictionary *)_dicParas :(id<doIScriptEngine>)_scriptEngine : (doInvokeResult *) _invokeResult
 {
     //同步消息
     return [doScriptEngineHelper InvokeSyncSelector:self : _methodName :_dicParas :_scriptEngine :_invokeResult];
 }
-- (BOOL) InvokeAsyncMethod: (NSString *) _methodName : (doJsonNode *) _dicParas :(id<doIScriptEngine>) _scriptEngine : (NSString *) _callbackFuncName
+- (BOOL) InvokeAsyncMethod: (NSString *) _methodName : (NSDictionary *) _dicParas :(id<doIScriptEngine>) _scriptEngine : (NSString *) _callbackFuncName
 {
     //异步消息
     return [doScriptEngineHelper InvokeASyncSelector:self : _methodName :_dicParas :_scriptEngine: _callbackFuncName];
